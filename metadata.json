@@ -1,0 +1,6 @@
+{
+  "name": "Sarvam AI Hindi Voice Platform",
+  "description": "An interactive platform styled after Sarvam.ai that supports Hindi text-to-speech, translation, voice chat, and speech-to-text capabilities.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
