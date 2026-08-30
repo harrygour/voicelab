@@ -38,7 +38,7 @@ export const HINDI_VOICES: VoiceCharacter[] = [
 export const TTS_PRESETS = [
   {
     label: 'Customer Support (ग्राहक सहायता)',
-    text: 'नमस्ते, सरवम एआई कस्टमर सपोर्ट में आपका स्वागत है। मैं अनन्या हूँ, आपकी डिजिटल सहायिका। मैं आज आपकी किस प्रकार सहायता कर सकती हूँ?',
+    text: 'नमस्ते, वाणी एआई कस्टमर सपोर्ट में आपका स्वागत है। मैं अनन्या हूँ, आपकी डिजिटल सहायिका। मैं आज आपकी किस प्रकार सहायता कर सकती हूँ?',
     voiceId: 'ananya',
     emotion: 'Polite'
   },
@@ -56,7 +56,7 @@ export const TTS_PRESETS = [
   },
   {
     label: 'Product Marketing (उत्पाद विपणन)',
-    text: 'क्या आप अपनी खुद की हिंदी आवाज बनाना चाहते हैं? सरवम वॉइस एआई के साथ, अब आप मात्र कुछ सेकेंड्स में किसी भी पाठ को अत्यंत प्राकृतिक और स्पष्ट आवाज़ में बदल सकते हैं!',
+    text: 'क्या आप अपनी खुद की हिंदी आवाज बनाना चाहते हैं? वाणी वॉइस एआई के साथ, अब आप मात्र कुछ सेकेंड्स में किसी भी पाठ को अत्यंत प्राकृतिक और स्पष्ट आवाज़ में बदल सकते हैं और सीधे MP3 में डाउनलोड कर सकते हैं!',
     voiceId: 'kabir',
     emotion: 'Energetic'
   }
@@ -64,15 +64,15 @@ export const TTS_PRESETS = [
 
 export const TRANSLATION_PRESETS = [
   {
-    english: "Welcome to the future of Indic AI. Sarvam is building custom models trained on Indian cultural nuances and languages.",
-    hindi: "भारतीय एआई के भविष्य में आपका स्वागत है। सरवम भारतीय सांस्कृतिक बारीकियों और भाषाओं पर प्रशिक्षित कस्टम मॉडल बना रहा है।"
+    english: "Welcome to Vani AI voice platform. Generating natural speech in Indian languages with instant audio preview and MP3 export.",
+    hindi: "वाणी एआई वॉयस प्लेटफॉर्म में आपका स्वागत है। तत्काल ऑडियो पूर्वावलोकन और एमपी3 डाउनलोड के साथ भारतीय भाषाओं में प्राकृतिक आवाज़ बनाएं।"
   },
   {
     english: "Please make sure your microphone is enabled in browser permissions to record high-quality audio.",
     hindi: "कृपया सुनिश्चित करें कि उच्च गुणवत्ता वाले ऑडियो रिकॉर्ड करने के लिए आपके ब्राउज़र की अनुमतियों में आपका माइक्रोफ़ोन सक्षम है।"
   },
   {
-    english: "Voice technology will bridge the digital divide for millions of non-English speakers in India.",
-    hindi: "वॉयस तकनीक भारत में लाखों गैर-अंग्रेजी भाषी लोगों के लिए डिजिटल विभाजन को पाटने का काम करेगी।"
+    english: "Vani voice technology bridges the digital divide for millions of Hindi speakers across the country.",
+    hindi: "वाणी वॉयस तकनीक देश भर में लाखों हिंदी भाषी लोगों के लिए डिजिटल दूरी को पाटने का काम करती है।"
   }
 ];

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, Volume2, Square, Sparkles, SendToBack, User, Bot, RefreshCw } from 'lucide-react';
 import { ChatMessage } from '../types';
-import { playBase64Audio, speakWithBrowser, stopAllAudio } from '../utils/audio';
+import { playBase64Audio, speakWithBrowser, stopAllAudio, generateSpeechWav } from '../utils/audio';
 
 interface MayuraChatProps {
   apiKeyValid: boolean | null;
@@ -73,30 +73,41 @@ export default function MayuraChat({ apiKeyValid }: MayuraChatProps) {
 
     try {
       if (apiKeyValid) {
-        // Fetch real TTS audio from server
-        const response = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: textToSpeak,
-            voiceName: 'Zephyr' // Warm expressive female voice
-          })
-        });
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
+          // Fetch real TTS audio from server
+          const response = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: textToSpeak,
+              voiceName: 'Zephyr' // Warm expressive female voice
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.audio) {
-            await playBase64Audio(data.audio, 
-              () => setIsPlayingVoice(true),
-              () => setIsPlayingVoice(false)
-            );
-            return;
+          if (response.ok) {
+            const data = await response.json();
+            if (data.audio) {
+              await playBase64Audio(data.audio, 
+                () => setIsPlayingVoice(true),
+                () => setIsPlayingVoice(false)
+              );
+              return;
+            }
           }
+        } catch (serverErr) {
+          console.warn("MayuraChat TTS server timeout/error, using instant voice engine...", serverErr);
         }
       }
 
-      // Local browser fallback synthesis
-      await speakWithBrowser(textToSpeak, 'female', 1.0,
+      // Fast native speech synthesis
+      await speakWithBrowser(
+        textToSpeak, 
+        'female', 
+        1.0,
         () => setIsPlayingVoice(true),
         () => setIsPlayingVoice(false)
       );

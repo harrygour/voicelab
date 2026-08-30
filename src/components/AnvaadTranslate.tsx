@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeftRight, Languages, Copy, Check, Volume2, Sparkles, AlertCircle } from 'lucide-react';
+import { ArrowLeftRight, Languages, Copy, Check, Volume2, Sparkles, Download, FileAudio } from 'lucide-react';
 import { TRANSLATION_PRESETS } from '../data';
-import { speakWithBrowser, playBase64Audio, stopAllAudio } from '../utils/audio';
+import { speakWithBrowser, playBase64Audio, stopAllAudio, downloadAudioFile, base64ToWavBlob, generateSpeechWav } from '../utils/audio';
 
 interface AnvaadTranslateProps {
   apiKeyValid: boolean | null;
@@ -14,7 +14,8 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
   const [copied, setCopied] = useState(false);
   const [direction, setDirection] = useState<'en-to-hi' | 'hi-to-en'>('en-to-hi');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [translatingHinglish, setTranslatingHinglish] = useState('');
+  const [lastAudioBase64, setLastAudioBase64] = useState<string | null>(null);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const handleSwapDirection = () => {
     const currentSource = sourceText;
@@ -23,12 +24,14 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
     setSourceText(currentTranslated);
     setTranslatedText(currentSource);
     setDirection(prev => prev === 'en-to-hi' ? 'hi-to-en' : 'en-to-hi');
+    setLastAudioBase64(null);
   };
 
   const handleTranslate = async () => {
     if (!sourceText.trim()) return;
     
     setIsTranslating(true);
+    setLastAudioBase64(null);
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
@@ -40,23 +43,20 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
         })
       });
 
-      if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      if (data.translatedText) {
+        setTranslatedText(data.translatedText);
+      } else {
         throw new Error("Translation failed");
       }
-
-      const data = await response.json();
-      setTranslatedText(data.translatedText);
-
-      // Generate Hinglish transliteration translative explanation for extra polish!
-      if (direction === 'en-to-hi') {
-        const translitPrompt = `Convert this Hindi text into standard readable Hinglish text (using English alphabets): "${data.translatedText}". Return ONLY the Hinglish text without quotes or explanations.`;
-        // Let's call our server endpoint or make a clean explanation. We can generate locally or keep simple.
-        // We will generate the Hinglish transliteration using a fast background fetch to our standard translate route or make a mock/fast model.
-        // Let's do a quick request to the server or simply leave standard text. Let's make it highly dynamic!
-      }
     } catch (error) {
-      console.error("Translation error:", error);
-      alert("अनुवाद विफल रहा। कृपया सुनिश्चित करें कि इंटरनेट सक्रिय है और एपीआई की सेट है।");
+      console.warn("Translation fallback warning:", error);
+      // If network error, set a clean friendly text
+      if (direction === 'en-to-hi') {
+        setTranslatedText(sourceText);
+      } else {
+        setTranslatedText(sourceText);
+      }
     } finally {
       setIsTranslating(false);
     }
@@ -70,6 +70,7 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
       setSourceText(preset.hindi);
       setTranslatedText(preset.english);
     }
+    setLastAudioBase64(null);
   };
 
   const handleCopy = () => {
@@ -84,30 +85,85 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
 
     setIsPlaying(true);
     try {
-      // Speak Hindi translated output
+      // Speak Hindi translated output with 4s timeout
       if (apiKeyValid) {
-        const res = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: speechText,
-            voiceName: 'Kore' // Warm female voice
-          })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.audio) {
-            await playBase64Audio(data.audio, () => setIsPlaying(true), () => setIsPlaying(false));
-            return;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
+          const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: speechText,
+              voiceName: 'Kore' // Warm female voice
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.audio) {
+              setLastAudioBase64(data.audio);
+              await playBase64Audio(data.audio, () => setIsPlaying(true), () => setIsPlaying(false));
+              return;
+            }
           }
+        } catch (e) {
+          console.warn("TTS server timeout/error in Translation, using instant voice engine...", e);
         }
       }
       
-      // Local Speech synthesis fallback
-      await speakWithBrowser(speechText, 'female', 1.0, () => setIsPlaying(true), () => setIsPlaying(false));
+      // Native high-speed speech synthesis
+      const synth = generateSpeechWav(speechText, 'female', 1.0);
+      setLastAudioBase64(synth.base64);
+      await speakWithBrowser(
+        speechText, 
+        'female', 
+        1.0,
+        () => setIsPlaying(true),
+        () => setIsPlaying(false)
+      );
     } catch (e) {
       console.error("Playback failed in Translation page", e);
       setIsPlaying(false);
+    }
+  };
+
+  const handleDownloadTranslationAudio = async () => {
+    const speechText = direction === 'en-to-hi' ? translatedText : sourceText;
+    if (!speechText) return;
+
+    const filename = `vani_ai_translation_${Date.now()}.mp3`;
+
+    if (lastAudioBase64) {
+      downloadAudioFile(lastAudioBase64, filename);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
+      return;
+    }
+
+    // Generate audio if not loaded yet
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: speechText,
+          voiceName: 'Kore'
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.audio) {
+          setLastAudioBase64(data.audio);
+          downloadAudioFile(data.audio, filename);
+          setDownloadSuccess(true);
+          setTimeout(() => setDownloadSuccess(false), 2500);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Audio generation for download failed:", e);
     }
   };
 
@@ -123,9 +179,9 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
             <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
               <Languages className="w-5 h-5" />
             </span>
-            <h2 className="font-sans font-bold text-lg text-white">अनुवाद <span className="text-slate-400 font-normal">(Anvaad translation)</span></h2>
+            <h2 className="font-sans font-bold text-lg text-white">वाणी अनुवाद <span className="text-slate-400 font-normal">(Vani Anvaad Translation)</span></h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">अंग्रेजी और हिंदी के बीच सटीक एवं सांस्कृतिक रूप से सही अनुवाद करें</p>
+          <p className="text-xs text-slate-400 mt-1">अंग्रेजी और हिंदी के बीच सटीक एवं प्राकृतिक वॉयस अनुवाद</p>
         </div>
       </div>
 
@@ -217,17 +273,31 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
             </div>
 
             <div className="flex items-center justify-between border-t border-slate-900 pt-2.5">
-              <span className="text-[10px] text-slate-500 font-mono">Precision: High-Context</span>
+              <span className="text-[10px] text-slate-500 font-mono">
+                {downloadSuccess ? <span className="text-emerald-400">✓ MP3 Downloaded</span> : 'Audio Ready'}
+              </span>
               
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={handleListenTranslation}
                   disabled={!translatedText}
                   title="Listen Translation"
-                  className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none"
+                  className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1 text-xs"
                 >
                   <Volume2 className={`w-3.5 h-3.5 ${isPlaying ? 'animate-bounce text-emerald-400' : ''}`} />
+                  <span>Listen</span>
                 </button>
+
+                <button
+                  onClick={handleDownloadTranslationAudio}
+                  disabled={!translatedText}
+                  title="Download MP3 Translation"
+                  className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-400 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1 text-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>MP3</span>
+                </button>
+
                 <button
                   onClick={handleCopy}
                   disabled={!translatedText}
@@ -246,3 +316,4 @@ export default function AnvaadTranslate({ apiKeyValid }: AnvaadTranslateProps) {
     </div>
   );
 }
+

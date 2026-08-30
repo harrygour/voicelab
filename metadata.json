@@ -1,6 +1,6 @@
 {
-  "name": "Sarvam AI Hindi Voice Platform",
-  "description": "An interactive platform styled after Sarvam.ai that supports Hindi text-to-speech, translation, voice chat, and speech-to-text capabilities.",
+  "name": "Vani AI Hindi Voice Platform",
+  "description": "An interactive platform named Vani AI (वाणी एआई) that supports Hindi text-to-speech, translation, voice chat, and speech-to-text with real-time audio preview and MP3/WAV downloads.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

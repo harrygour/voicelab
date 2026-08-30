@@ -22,11 +22,11 @@ export default function Navbar({ apiKeyValid, checkingStatus, onRefreshStatus }:
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-sans font-bold text-lg tracking-tight text-white">सरवम</span>
+              <span className="font-sans font-bold text-lg tracking-tight text-white">वाणी</span>
               <span className="bg-gradient-to-r from-amber-400 to-rose-500 bg-clip-text text-transparent font-sans font-extrabold text-lg tracking-tight">AI</span>
-              <span className="text-xs bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-full font-mono font-medium tracking-wider border border-amber-500/25">IND_VOICE_v2</span>
+              <span className="text-xs bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-full font-mono font-medium tracking-wider border border-amber-500/25">VANI_VOICE_v2</span>
             </div>
-            <p className="text-[10px] text-slate-400 font-mono tracking-wide">HINDI SPEECH ENGINE PLAYGROUND</p>
+            <p className="text-[10px] text-slate-400 font-mono tracking-wide">HINDI SPEECH & VOICE AI PLATFORM</p>
           </div>
         </div>
 

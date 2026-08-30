@@ -25,7 +25,8 @@ export interface TTSHistoryItem {
   voiceName: string;
   gender: 'male' | 'female';
   timestamp: string;
-  audioUrl?: string; // If generated via browser speech synth or Gemini audio
+  audioBase64?: string; // Stored audio data for instant replay and download
+  audioUrl?: string;
   duration?: string;
 }
 
@@ -34,6 +35,7 @@ export interface TranslationResult {
   translatedText: string;
   sourceLang: string;
   targetLang: string;
+  audioBase64?: string;
 }
 
 export interface ChatMessage {
@@ -41,6 +43,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: string;
+  audioBase64?: string;
   audioUrl?: string;
   isPlaying?: boolean;
 }
